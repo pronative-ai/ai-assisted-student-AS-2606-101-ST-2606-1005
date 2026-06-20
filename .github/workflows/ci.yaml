@@ -1,0 +1,195 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/backend
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          queries: security-and-quality
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "code-scanning:backend"
+
+      - name: Lowercase repository name
+        id: repo
+        run: echo "repo=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: src/backend
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.repo }}/backend:${{ github.sha }}
+            ghcr.io/${{ steps.repo.outputs.repo }}/backend:latest
+
+      - name: Azure Login
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ghcr.io/${{ steps.repo.outputs.repo }}/backend:${{ github.sha }}
+          containerAppName: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+          resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          registryUrl: ghcr.io
+          registryUsername: ${{ github.actor }}
+          registryPassword: ${{ secrets.GHCR_PAT }}
+          environmentVariables: |
+            ASPNETCORE_ENVIRONMENT=Production
+            ASPNETCORE_URLS=http://+:8080
+            AllowedOrigins__0=${{ vars.FRONTEND_URL }}
+
+      - name: Notify CI/CD Review Agent on Failure
+        if: failure()
+        run: |
+          curl -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/pipeline/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "run_id": "${{ github.run_id }}",
+              "repository": "${{ github.repository }}",
+              "commit_sha": "${{ github.sha }}"
+            }'
+
+      - name: Trigger PR Code Review
+        id: code-review
+        if: github.event_name == 'pull_request' && always()
+        run: |
+          response=$(curl -s -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/code-review/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "pull_request_number": ${{ github.event.pull_request.number }},
+              "commit_sha": "${{ github.event.pull_request.head.sha }}"
+            }')
+          echo "Code Review response: $response"
+          report_id=$(echo "$response" | jq -r '.agent_report.report_id // .agent_report.id // empty')
+          echo "report_id=$report_id" >> $GITHUB_OUTPUT
+
+      - name: Trigger Critic Review
+        if: github.event_name == 'pull_request' && always() && steps.code-review.outputs.report_id != ''
+        run: |
+          curl -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/critic/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "pull_request_number": ${{ github.event.pull_request.number }},
+              "commit_sha": "${{ github.event.pull_request.head.sha }}",
+              "code_review_report_id": "${{ steps.code-review.outputs.report_id }}"
+            }'            
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: src/frontend/package-lock.json
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.BACKEND_URL }}
+      - run: npm test --if-present
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "code-scanning:frontend"
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          skip_app_build: true
+          # skip_deploy_on_missing_secrets: true
+          app_location: "src/frontend"
+          output_location: ".next"
+
+      - name: Notify CI/CD Review Agent on Failure
+        if: failure()
+        run: |
+          curl -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/pipeline/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "run_id": "${{ github.run_id }}",
+              "repository": "${{ github.repository }}",
+              "commit_sha": "${{ github.sha }}"
+            }'
+
+      - name: Trigger PR Code Review
+        id: code-review
+        if: github.event_name == 'pull_request' && always()
+        run: |
+          response=$(curl -s -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/code-review/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "pull_request_number": ${{ github.event.pull_request.number }},
+              "commit_sha": "${{ github.event.pull_request.head.sha }}"
+            }')
+          echo "Code Review response: $response"
+          report_id=$(echo "$response" | jq -r '.agent_report.report_id // .agent_report.id // empty')
+          echo "report_id=$report_id" >> $GITHUB_OUTPUT
+
+      - name: Trigger Critic Review
+        if: github.event_name == 'pull_request' && always() && steps.code-review.outputs.report_id != ''
+        run: |
+          curl -X POST https://ca-adlc-unified-agent.ashyocean-2579666a.westus2.azurecontainerapps.io/api/critic/review/github \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "pull_request_number": ${{ github.event.pull_request.number }},
+              "commit_sha": "${{ github.event.pull_request.head.sha }}",
+              "code_review_report_id": "${{ steps.code-review.outputs.report_id }}"
+            }'          
