@@ -6,7 +6,6 @@ using Opencode.Telemetry.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
 
 var cosmosConnectionString = builder.Configuration.GetValue<string>("CosmosDb:ConnectionString")
     ?? Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING")
@@ -33,11 +32,6 @@ if (!string.IsNullOrEmpty(appInsightsConnectionString))
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
