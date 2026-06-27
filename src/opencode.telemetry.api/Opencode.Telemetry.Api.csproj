@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\opencode.telemetry.infrastructure\Opencode.Telemetry.Infrastructure.csproj" />
+    <ProjectReference Include="..\opencode.telemetry.application\Opencode.Telemetry.Application.csproj" />
+    <ProjectReference Include="..\opencode.telemetry.domain\Opencode.Telemetry.Domain.csproj" />
+    <ProjectReference Include="..\opencode.telemetry.contracts\Opencode.Telemetry.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

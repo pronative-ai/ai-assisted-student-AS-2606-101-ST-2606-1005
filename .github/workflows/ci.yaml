@@ -25,9 +25,9 @@ jobs:
         with:
           languages: csharp
           queries: security-and-quality
-      - run: dotnet restore Bookkeeping.slnx
-      - run: dotnet build Bookkeeping.slnx --no-restore --configuration Release
-      - run: dotnet test Bookkeeping.slnx --no-build --configuration Release
+      - run: dotnet restore Opencode.Telemetry.slnx
+      - run: dotnet build Opencode.Telemetry.slnx --no-restore --configuration Release
+      - run: dotnet test Opencode.Telemetry.slnx --no-build --configuration Release
       - uses: github/codeql-action/analyze@v4
         with:
           category: "code-scanning:backend"
@@ -47,7 +47,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: src/backend/Dockerfile
+          file: src/opencode.telemetry.api/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ steps.repo.outputs.repo }}/backend:${{ github.sha }}

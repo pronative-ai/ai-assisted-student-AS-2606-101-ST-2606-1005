@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/opencode.telemetry.api/">
+    <Project Path="src/opencode.telemetry.api/Opencode.Telemetry.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/opencode.telemetry.application/">
+    <Project Path="src/opencode.telemetry.application/Opencode.Telemetry.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/opencode.telemetry.contracts/">
+    <Project Path="src/opencode.telemetry.contracts/Opencode.Telemetry.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/opencode.telemetry.domain/">
+    <Project Path="src/opencode.telemetry.domain/Opencode.Telemetry.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/opencode.telemetry.infrastructure/">
+    <Project Path="src/opencode.telemetry.infrastructure/Opencode.Telemetry.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/opencode.telemetry.tests/">
+    <Project Path="tests/opencode.telemetry.tests/Opencode.Telemetry.Tests.csproj" />
+  </Folder>
+</Solution>
