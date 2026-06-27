@@ -14,10 +14,10 @@ RUN dotnet restore "src/opencode.telemetry.api/Opencode.Telemetry.Api.csproj"
 
 COPY . .
 WORKDIR "/src/src/opencode.telemetry.api"
-RUN dotnet build "Opencode.Telemetry.Api.csproj" -c Release --no-restore
+RUN dotnet build "Opencode.Telemetry.Api.csproj" -c Release
 
 FROM build AS publish
-RUN dotnet publish "Opencode.Telemetry.Api.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "Opencode.Telemetry.Api.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
