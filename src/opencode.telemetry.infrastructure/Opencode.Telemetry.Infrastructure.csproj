@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\opencode.telemetry.application\Opencode.Telemetry.Application.csproj" />
+    <ProjectReference Include="..\opencode.telemetry.domain\Opencode.Telemetry.Domain.csproj" />
+    <ProjectReference Include="..\opencode.telemetry.contracts\Opencode.Telemetry.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.30.2" />
+    <PackageReference Include="Grpc.Tools" Version="2.70.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Proto\opentelemetry\proto\common\v1\common.proto" ProtoRoot="Proto\" GrpcServices="None" />
+    <Protobuf Include="Proto\opentelemetry\proto\resource\v1\resource.proto" ProtoRoot="Proto\" GrpcServices="None" />
+    <Protobuf Include="Proto\opentelemetry\proto\metrics\v1\metrics.proto" ProtoRoot="Proto\" GrpcServices="None" />
+    <Protobuf Include="Proto\opentelemetry\proto\logs\v1\logs.proto" ProtoRoot="Proto\" GrpcServices="None" />
+    <Protobuf Include="Proto\opentelemetry\proto\collector\metrics\v1\metrics_service.proto" ProtoRoot="Proto\" GrpcServices="None" />
+    <Protobuf Include="Proto\opentelemetry\proto\collector\logs\v1\logs_service.proto" ProtoRoot="Proto\" GrpcServices="None" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

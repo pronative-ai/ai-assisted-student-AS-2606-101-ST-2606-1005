@@ -2,6 +2,7 @@
 # GLOBAL TECHNICAL DESIGN
 
 ## Repository Context
+=======
 - Repository: pronative-ai/ai-assisted-student-AS-2606-101-ST-2606-1005
 - Program: AI-Assisted Phase 1
 - Student ID: 1005
